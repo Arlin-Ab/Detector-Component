@@ -8,6 +8,7 @@ import cv2
 import json
 import easyocr
 from detect_compo import ip_region_proposal as ip
+import os
 
 app = FastAPI()
 
@@ -174,4 +175,9 @@ async def detect_components(file: UploadFile = File(...)):
             os.remove(temp_filename)
         if compo_path and os.path.exists(compo_path):
             os.remove(compo_path)
+            
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
 
