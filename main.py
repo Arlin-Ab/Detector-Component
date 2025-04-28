@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
@@ -21,7 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str, request: Request):
+    return JSONResponse(status_code=204)
 
 def filter_components(components, min_width=40, min_height=20, min_area=800):
     return [
