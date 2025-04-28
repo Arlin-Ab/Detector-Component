@@ -1,0 +1,22 @@
+# Ignorar carpetas basura de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+env/
+venv/
+ENV/
+.venv/
+
+# Archivos de salida
+output/
+temp_uploads/
+
+# Archivos temporales
+*.log
+*.sqlite3
+.DS_Store
+.idea/
+.vscode/
