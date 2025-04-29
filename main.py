@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
@@ -8,11 +8,10 @@ import cv2
 import json
 import easyocr
 from detect_compo import ip_region_proposal as ip
-import os
 
 app = FastAPI()
 
-
+# --- Configuración CORS ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,9 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.options("/{rest_of_path:path}")
-async def preflight_handler(rest_of_path: str, request: Request):
-    return JSONResponse(status_code=204)
+
 
 def filter_components(components, min_width=40, min_height=20, min_area=800):
     return [
@@ -44,7 +41,7 @@ def detect_text_easyocr(img_path):
     texts = []
     for (bbox, text, confidence) in results:
         if confidence < 0.5 or not text.strip():
-            continue  
+            continue
         (top_left, top_right, bottom_right, bottom_left) = bbox
         x_coords = [top_left[0], top_right[0], bottom_right[0], bottom_left[0]]
         y_coords = [top_left[1], top_right[1], bottom_right[1], bottom_left[1]]
@@ -82,8 +79,7 @@ def associate_texts_to_components(components, texts):
                 min_distance = distance
                 best_match = text
 
-        # Si el texto más cercano está razonablemente cerca, asociarlo
-        if best_match and min_distance < max(comp['width'], comp['height']) * 1.5:  
+        if best_match and min_distance < max(comp['width'], comp['height']) * 1.5:
             assigned_text = best_match['text']
         else:
             assigned_text = ""
@@ -100,14 +96,12 @@ def associate_texts_to_components(components, texts):
 
     return associated
 
-
 def guess_component_type(comp, text):
     width = comp['width']
     height = comp['height']
     text = (text or "").lower()
 
-    
-    if "login" in text or "entrar" in text or "aceptar" in text or "submit" in text or "button" in "registrar" in text:
+    if "login" in text or "entrar" in text or "aceptar" in text or "submit" in text or "registrar" in text:
         return "button"
     if "input" in text or "ingrese" in text or "escriba" in text:
         return "input"
@@ -118,7 +112,6 @@ def guess_component_type(comp, text):
     if "etiqueta" in text or (len(text.strip()) <= 10 and width < 200 and height < 100):
         return "label"
 
-   
     if width > 250 and height > 100:
         return "card"
     if height > 50 and width < 300:
@@ -128,8 +121,7 @@ def guess_component_type(comp, text):
 
     return "input"
 
-
-
+# --- Endpoint principal ---
 
 @app.post("/api/detect-components")
 async def detect_components(file: UploadFile = File(...)):
@@ -171,15 +163,9 @@ async def detect_components(file: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
-    
+
     finally:
         if temp_filename and os.path.exists(temp_filename):
             os.remove(temp_filename)
         if compo_path and os.path.exists(compo_path):
             os.remove(compo_path)
-            
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
-
