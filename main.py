@@ -6,7 +6,6 @@ import os
 import uuid
 import cv2
 import json
-import easyocr
 from detect_compo import ip_region_proposal as ip
 
 app = FastAPI()
@@ -36,8 +35,12 @@ def resize_height_by_longest_edge(img_path, resize_length=800):
     return resize_length if height > width else int(resize_length * (height / width))
 
 def detect_text_easyocr(img_path):
+    # Lazy import solo cuando realmente se necesite
+    import easyocr
+
     reader = easyocr.Reader(["es", "en"], gpu=False)
     results = reader.readtext(img_path)
+    
     texts = []
     for (bbox, text, confidence) in results:
         if confidence < 0.5 or not text.strip():
@@ -58,6 +61,7 @@ def detect_text_easyocr(img_path):
                 "height": height
             })
     return texts
+
 
 def associate_texts_to_components(components, texts):
     associated = []
